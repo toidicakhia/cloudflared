@@ -34,3 +34,10 @@ if ($LASTEXITCODE -ne 0) { throw "Failed to build cloudflared for 386" }
 ## Sign build
 azuresigntool.exe sign -kvu $env:KEY_VAULT_URL -kvi "$env:KEY_VAULT_CLIENT_ID" -kvs "$env:KEY_VAULT_SECRET" -kvc "$env:KEY_VAULT_CERTIFICATE" -kvt "$env:KEY_VAULT_TENANT_ID" -tr "$TIMESTAMP_RFC3161" -d "Cloudflare Tunnel Daemon" .\cloudflared.exe
 copy .\cloudflared.exe .\artifacts\cloudflared-windows-386.exe
+
+# The toolchain pinned in go.mod targets Windows 10 and later. Build the
+# Windows 7/8/8.1 binaries separately with the go-legacy-win7 fork, which is
+# pinned and checksum-verified in go-legacy-wrapper.ps1.
+Write-Output "Building legacy Windows 7/8/8.1 binaries"
+& (Join-Path $PSScriptRoot "go-legacy-wrapper.ps1") -ScriptToExecute (Join-Path $PSScriptRoot "builds-legacy.ps1") -ScriptParameters @{ Sign = $true }
+if ($LASTEXITCODE -ne 0) { throw "Failed to build legacy Windows 7/8/8.1 binaries" }

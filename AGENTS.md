@@ -38,6 +38,9 @@ TARGET_OS=windows TARGET_ARCH=amd64 make cloudflared
 # macOS ARM64
 TARGET_OS=darwin TARGET_ARCH=arm64 make cloudflared
 
+# Windows 7/8/8.1 (pinned go-legacy-win7 toolchain, see README)
+powershell -ExecutionPolicy Bypass -File .\.ci\scripts\windows\go-legacy-wrapper.ps1 -ScriptToExecute .\.ci\scripts\windows\builds-legacy.ps1
+
 # FIPS compliant build
 FIPS=true make cloudflared
 ```

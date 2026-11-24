@@ -95,6 +95,45 @@ fail if their Go is older than `go.mod` and use their own Go if it is newer.
 ### Build
 To build cloudflared locally run `make cloudflared`
 
+### Windows 7 / 8 / 8.1 builds
+
+The Go toolchain pinned in `go.mod` only runs on Windows 10 and later, so the
+standard Windows artifacts produced by `make cloudflared` cannot start on
+Windows 7, 8 or 8.1. CI additionally produces legacy binaries with
+[go-legacy-win7](https://github.com/thongtech/go-legacy-win7), a fork of Go
+that tracks the same upstream version and restores the legacy Windows
+fallbacks:
+
+* `cloudflared-windows-amd64-legacy.exe`
+* `cloudflared-windows-386-legacy.exe`
+* `cloudflared-windows-amd64-legacy.msi`
+* `cloudflared-windows-386-legacy.msi`
+
+They are built by `.ci/scripts/windows/builds.ps1` through
+`.ci/scripts/windows/go-legacy-wrapper.ps1`, which downloads the pinned fork
+release and verifies its SHA-256 before building. The MSIs are packaged by
+`.ci/scripts/package-windows.sh` from the same WiX source as the standard
+installers, so they share the product's UpgradeCode and replace (or are
+replaced by) a standard install in place. To build the binaries locally (GNU
+Make is required):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\.ci\scripts\windows\go-legacy-wrapper.ps1 `
+  -ScriptToExecute .\.ci\scripts\windows\builds-legacy.ps1
+```
+
+The legacy binaries are built with `CGO_ENABLED=0` for both architectures, like
+the existing Windows 386 build. A cgo build would import the Universal C
+Runtime DLLs, which stock Windows 7 does not ship, so it would fail to start
+there. As a consequence the legacy binaries use the generic ICMP proxy instead
+of the native Windows implementation.
+
+The fork is a third-party toolchain, so the legacy binaries are additive: keep
+shipping the standard builds for Windows 10 and later. When updating the Go
+version in `go.mod`, update the version, URL, archive name and checksum in
+`go-legacy-wrapper.ps1` to the matching fork release, or the legacy build fails
+because the fork is older than the new `go` directive.
+
 ### Test
 To locally run the tests run `make test`
 
